@@ -1,5 +1,6 @@
 import sys
 import sqlite3
+import os
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
                              QFormLayout, QGroupBox, QLabel, QLineEdit, 
                              QDateEdit, QComboBox, QPushButton, QTableWidget, 
@@ -12,6 +13,12 @@ class QuanLyNhanSuApp(QWidget):
         self.setWindowTitle("Phần Mềm Quản Lý Nhân Sự - SQLite")
         self.resize(900, 600)
         
+        # --- THÊM 2 DÒNG NÀY ---
+        # Lấy thư mục chứa file app_nhansu.py hiện tại
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        # Tạo đường dẫn tuyệt đối cho file nhansu.db
+        self.db_path = os.path.join(base_dir, 'nhansu.db')
+
         self.create_db() # Khởi tạo Database
         self.setup_ui()  # Khởi tạo Giao diện
         self.load_data() # Tải dữ liệu lên bảng khi mở app
@@ -19,7 +26,7 @@ class QuanLyNhanSuApp(QWidget):
     # ================= 1. KHỞI TẠO CƠ SỞ DỮ LIỆU =================
     def create_db(self):
         # Kết nối tới database (nếu chưa có sẽ tự tạo file nhansu.db)
-        conn = sqlite3.connect('nhansu.db')
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         # Tạo bảng NhanSu nếu chưa tồn tại
         cursor.execute('''
@@ -118,7 +125,7 @@ class QuanLyNhanSuApp(QWidget):
     def load_data(self):
         """Hiển thị tất cả dữ liệu từ Database lên QTableWidget"""
         self.table_nhansu.setRowCount(0) # Xóa dữ liệu cũ trên bảng
-        conn = sqlite3.connect('nhansu.db')
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM NhanSu")
         rows = cursor.fetchall()
@@ -142,7 +149,7 @@ class QuanLyNhanSuApp(QWidget):
             return
 
         try:
-            conn = sqlite3.connect('nhansu.db')
+            conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             # Dùng tham số (?) để tránh lỗi SQL Injection
             cursor.execute("INSERT INTO NhanSu VALUES (?, ?, ?, ?, ?)", (cccd, hoten, ngaysinh, gioitinh, diachi))
@@ -165,7 +172,7 @@ class QuanLyNhanSuApp(QWidget):
         reply = QMessageBox.question(self, 'Xác nhận', f'Bạn có chắc chắn muốn xóa nhân sự có CCCD: {cccd}?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
-            conn = sqlite3.connect('nhansu.db')
+            conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             cursor.execute("DELETE FROM NhanSu WHERE CCCD = ?", (cccd,))
             conn.commit()
@@ -185,7 +192,7 @@ class QuanLyNhanSuApp(QWidget):
             QMessageBox.warning(self, "Cảnh báo", "Vui lòng nhập/chọn Số CCCD cần sửa!")
             return
 
-        conn = sqlite3.connect('nhansu.db')
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute('''
             UPDATE NhanSu 
@@ -213,7 +220,7 @@ class QuanLyNhanSuApp(QWidget):
         elif tieu_chi == "Họ và tên": cot_tim_kiem = "HoTen"
         elif tieu_chi == "Địa chỉ": cot_tim_kiem = "DiaChi"
 
-        conn = sqlite3.connect('nhansu.db')
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         # Thêm dấu % để tìm kiếm chứa từ khóa (LIKE %keyword%)
         cursor.execute(f"SELECT * FROM NhanSu WHERE {cot_tim_kiem} LIKE ?", ('%' + tu_khoa + '%',))
